@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Dashboard</title>
+<style>
+  :root{
+    --bg:#f4f6fb; --card:#fff; --ink:#1e2433; --muted:#6b7487; --line:#e4e8f1;
+    --brand:#4f46e5; --ok:#16a34a; --okbg:#dcfce7; --bad:#dc2626; --badbg:#fee2e2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+  .hidden{display:none!important}
+  .btn{border:0;border-radius:10px;padding:10px 18px;font-size:15px;font-weight:600;cursor:pointer;background:var(--brand);color:#fff}
+  .btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+  input[type=text],input[type=password]{padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:15px;outline:none;background:#fff}
+  input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(79,70,229,.12)}
+
+  /* login */
+  .login{min-height:100vh;display:grid;place-items:center;padding:20px}
+  .login .box{background:#fff;border:1px solid var(--line);border-radius:18px;padding:30px;width:100%;max-width:360px;text-align:center;box-shadow:0 6px 24px rgba(30,36,51,.06)}
+  .login h2{margin-bottom:6px}
+  .login p{color:var(--muted);font-size:14px;margin-bottom:18px}
+  .login input{width:100%;margin-bottom:12px}
+  .login .btn{width:100%}
+  .err{color:var(--bad);font-size:14px;min-height:18px;margin-top:8px}
+
+  /* dashboard */
+  .wrap{max-width:1150px;margin:0 auto;padding:20px 16px 60px}
+  header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+  header h1{font-size:24px}
+  header small{color:var(--muted)}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .stat span{font-size:13px;color:var(--muted);font-weight:600}
+  .stat b{display:block;font-size:30px;margin-top:4px}
+  .stat.p b{color:var(--ok)} .stat.f b{color:var(--bad)}
+  .tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+  .tools input{flex:1;min-width:200px}
+  .chips{display:flex;gap:6px}
+  .chip{border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:8px 14px;font-size:14px;font-weight:600;cursor:pointer;color:var(--muted)}
+  .chip.on{background:var(--brand);border-color:var(--brand);color:#fff}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  .col{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .col h3{padding:14px 18px;font-size:16px;display:flex;justify-content:space-between;align-items:center}
+  .col.pass h3{background:var(--okbg);color:#166534}
+  .col.fail h3{background:var(--badbg);color:#991b1b}
+  .col h3 em{font-style:normal;background:#fff;border-radius:99px;padding:2px 12px;font-size:14px}
+  .list{max-height:68vh;overflow:auto}
+  .row{padding:13px 18px;border-top:1px solid var(--line);cursor:pointer;display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .row:hover{background:#f8f9fe}
+  .row .n{font-weight:600}
+  .row .m{font-size:13px;color:var(--muted);margin-top:2px}
+  .row .s{text-align:right;white-space:nowrap}
+  .row .s b{font-size:17px}
+  .row .s div{font-size:12px;color:var(--muted)}
+  .empty{padding:30px;text-align:center;color:var(--muted);font-size:14px}
+
+  /* modal */
+  .modal{position:fixed;inset:0;background:rgba(15,20,40,.55);display:grid;place-items:center;padding:16px;z-index:20}
+  .modal .box{background:#fff;border-radius:16px;max-width:720px;width:100%;max-height:88vh;display:flex;flex-direction:column}
+  .modal .hd{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}
+  .modal .bd{padding:14px 22px;overflow:auto}
+  .ans{padding:10px 12px;border-radius:10px;margin-bottom:8px;font-size:14px;line-height:1.5}
+  .ans.ok{background:#f0fdf4;border:1px solid #bbf7d0}
+  .ans.no{background:#fef2f2;border:1px solid #fecaca}
+  @media(max-width:800px){.stats{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login" id="login">
+  <div class="box">
+    <div style="font-size:38px">🔐</div>
+    <h2>Admin Login</h2>
+    <p>Dashboard dekhne ke liye password likhein</p>
+    <input type="password" id="pw" placeholder="Password" autofocus>
+    <button class="btn" id="loginBtn">Login</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="wrap hidden" id="dash">
+  <header>
+    <div><h1>📊 Quiz Admin Dashboard</h1><small id="updated"></small></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn ghost" id="refresh">↻ Refresh</button>
+      <button class="btn ghost" id="logout">Logout</button>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><span>Total Attempts</span><b id="sTotal">0</b></div>
+    <div class="stat p"><span>Passed</span><b id="sPass">0</b></div>
+    <div class="stat f"><span>Failed</span><b id="sFail">0</b></div>
+    <div class="stat"><span>Pass Rate</span><b id="sRate">0%</b></div>
+  </div>
+
+  <div id="debug" style="font-size:12px;color:#6b7487;margin-bottom:10px;word-break:break-all"></div>
+
+  <div id="note" class="hidden" style="background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:14px"></div>
+
+  <div class="tools">
+    <div class="chips" id="chips">
+      <button class="chip on" data-f="all">All</button>
+      <button class="chip" data-f="General Knowledge">General Knowledge</button>
+      <button class="chip" data-f="Computer">Computer</button>
+    </div>
+    <input type="text" id="search" placeholder="Name ya Roll No se search karein...">
+  </div>
+
+  <div class="cols">
+    <div class="col pass"><h3>✅ Pass Students <em id="cPass">0</em></h3><div class="list" id="passList"></div></div>
+    <div class="col fail"><h3>❌ Fail Students <em id="cFail">0</em></h3><div class="list" id="failList"></div></div>
+  </div>
+</div>
+
+<!-- DETAILS MODAL -->
+<div class="modal hidden" id="modal">
+  <div class="box">
+    <div class="hd">
+      <div><b id="mName" style="font-size:18px"></b><div id="mMeta" style="color:#6b7487;font-size:14px;margin-top:2px"></div></div>
+      <button class="btn ghost" id="mClose">✕</button>
+    </div>
+    <div class="bd" id="mBody"></div>
+  </div>
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbyLp0uttX1gSAfGb4fh2rqIYOrayx7Z8sdn2xm6Zy-kb7R8R45FvXRKwJyc225edTKiVw/exec";
+const PASS_PERCENT = 50;
+const $ = id => document.getElementById(id);
+let DATA = [], filter = "all", PW = "";
+
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- login ---------- */
+async function login(pw, silent){
+  $("loginErr").textContent = "";
+  $("loginBtn").disabled = true; $("loginBtn").textContent = "Checking...";
+  try{
+    const res = await fetch(API_URL + "?password=" + encodeURIComponent(pw));
+    const json = await res.json();
+    if(json.error){ if(!silent) $("loginErr").textContent = "Password galat hai."; return false; }
+    PW = pw; sessionStorage.setItem("adm", pw);
+    DATA = json; $("login").classList.add("hidden"); $("dash").classList.remove("hidden");
+    render(); return true;
+  }catch(e){
+    if(!silent) $("loginErr").textContent = "Data load nahi ho saka. Internet / Apps Script deployment check karein.";
+    return false;
+  }finally{
+    $("loginBtn").disabled = false; $("loginBtn").textContent = "Login";
+  }
+}
+$("loginBtn").onclick = () => login($("pw").value.trim());
+$("pw").onkeydown = e => { if(e.key === "Enter") $("loginBtn").click(); };
+$("logout").onclick = () => { sessionStorage.removeItem("adm"); location.reload(); };
+$("refresh").onclick = async () => {
+  $("refresh").textContent = "Loading...";
+  try{ const r = await fetch(API_URL + "?password=" + encodeURIComponent(PW)); const j = await r.json(); if(!j.error){ DATA = j; render(); } }catch(e){}
+  $("refresh").textContent = "↻ Refresh";
+};
+
+/* ---------- render ---------- */
+function pctOf(r){ const v = parseFloat(String(r["Percentage"] ?? "").replace("%","")); return isNaN(v) ? 0 : v; }
+function isPass(r){ return pctOf(r) >= PASS_PERCENT; }   // auto pass/fail
+
+function render(){
+  $("debug").textContent = "Version v3 | Sheet se mili rows: " + DATA.length + " | Headings: " + (DATA[0] ? Object.keys(DATA[0]).join(", ") : "-");
+  const note = $("note");
+  if(!DATA.length){
+    note.textContent = "⚠️ Google Sheet se koi row nahi mili. Sheet mein data aur headings check karein.";
+    note.classList.remove("hidden");
+  } else if(!("Name" in DATA[0])){
+    note.textContent = "⚠️ Sheet ki headings theek nahi. Row 1 mein Timestamp, Name, Roll No, Subject, Score, Total, Percentage, Result, Answers hona zaroori hai. Abhi mili hui: " + Object.keys(DATA[0]).join(", ");
+    note.classList.remove("hidden");
+  } else {
+    note.classList.add("hidden");
+  }
+  const q = $("search").value.trim().toLowerCase();
+  const rows = DATA.filter(r => r["Name"] || r["Roll No"])
+    .filter(r => filter === "all" || r["Subject"] === filter)
+    .filter(r => !q || String(r["Name"]).toLowerCase().includes(q) || String(r["Roll No"]).toLowerCase().includes(q))
+    .sort((a,b) => new Date(b["Timestamp"]) - new Date(a["Timestamp"]));
+
+  const pass = rows.filter(isPass), fail = rows.filter(r => !isPass(r));
+  $("sTotal").textContent = rows.length;
+  $("sPass").textContent = pass.length;
+  $("sFail").textContent = fail.length;
+  $("sRate").textContent = rows.length ? Math.round(pass.length/rows.length*100) + "%" : "0%";
+  $("cPass").textContent = pass.length; $("cFail").textContent = fail.length;
+  fillList($("passList"), pass); fillList($("failList"), fail);
+  $("updated").textContent = "Last updated: " + new Date().toLocaleTimeString();
+}
+
+function fillList(el, rows){
+  el.innerHTML = "";
+  if(!rows.length){ el.innerHTML = '<div class="empty">Koi student nahi</div>'; return; }
+  rows.forEach(r => {
+    const d = document.createElement("div"); d.className = "row";
+    const t = new Date(r["Timestamp"]);
+    d.innerHTML = '<div><div class="n">'+esc(r["Name"])+'</div><div class="m">Roll: '+esc(r["Roll No"])+' • '+esc(r["Subject"])+'</div></div>' +
+      '<div class="s"><b>'+esc(r["Score"])+'/'+esc(r["Total"])+'</b><div>'+pctOf(r)+'% • '+(isNaN(t)?"":t.toLocaleDateString())+'</div></div>';
+    d.onclick = () => openDetails(r);
+    el.appendChild(d);
+  });
+}
+
+/* ---------- details ---------- */
+function openDetails(r){
+  $("mName").textContent = r["Name"];
+  $("mMeta").textContent = "Roll: " + r["Roll No"] + " • " + r["Subject"] + " • " + r["Score"] + "/" + r["Total"] + " (" + pctOf(r) + "%) • " + (isPass(r) ? "PASS" : "FAIL");
+  const body = $("mBody"); body.innerHTML = "";
+  String(r["Answers"] || "").split("\n").filter(Boolean).forEach(line => {
+    const d = document.createElement("div");
+    d.className = "ans " + (line.includes("✔") ? "ok" : "no");
+    d.textContent = line;
+    body.appendChild(d);
+  });
+  if(!body.children.length) body.innerHTML = '<div class="empty">Answers available nahi.</div>';
+  $("modal").classList.remove("hidden");
+}
+$("mClose").onclick = () => $("modal").classList.add("hidden");
+$("modal").onclick = e => { if(e.target === $("modal")) $("modal").classList.add("hidden"); };
+
+/* ---------- filters ---------- */
+$("chips").onclick = e => {
+  const c = e.target.closest(".chip"); if(!c) return;
+  filter = c.dataset.f;
+  document.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === c));
+  render();
+};
+$("search").oninput = render;
+
+/* auto login if already logged in this session */
+const saved = sessionStorage.getItem("adm");
+if(saved) login(saved, true);
+</script>
+</body>
+</html>
